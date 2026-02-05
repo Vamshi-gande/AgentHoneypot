@@ -54,7 +54,7 @@ except RuntimeError as e:
     raise
 
 # Hugging Face Inference API configuration
-HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL_ID}"
 
 # Session storage (in-memory is acceptable for Fly.io deployment)
 sessions = {}
