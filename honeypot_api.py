@@ -54,7 +54,7 @@ except RuntimeError as e:
     raise
 
 # Hugging Face Inference API configuration
-HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL_ID}"
+HF_API_URL = "https://api-inference.huggingface.co/v1/chat/completions"
 
 # Session storage (in-memory is acceptable for Fly.io deployment)
 sessions = {}
@@ -328,13 +328,12 @@ class HuggingFaceConversationAgent:
             }
             
             payload = {
-                "inputs": prompt,
-                "parameters": {
-                    "temperature": temperature,
-                    "top_p": 0.9,
-                    "max_new_tokens": max_tokens,
-                    "return_full_text": False
-                }
+                "model": HF_MODEL_ID,
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens
             }
             
             logger.info("Calling Hugging Face Inference API...")
@@ -350,22 +349,14 @@ class HuggingFaceConversationAgent:
                 result = response.json()
                 
                 # Defensive parsing: HF API typically returns a list
-                if isinstance(result, list) and len(result) > 0:
-                    if isinstance(result[0], dict) and 'generated_text' in result[0]:
-                        generated_text = result[0]['generated_text'].strip()
-                        logger.info(f"✓ HF API response received: {len(generated_text)} chars")
-                        return generated_text
-                    elif isinstance(result[0], str):
-                        # Some models return direct string in list
-                        return result[0].strip()
-                
-                # If dict response format
-                elif isinstance(result, dict) and 'generated_text' in result:
-                    return result['generated_text'].strip()
-                
-                logger.warning(f"Unexpected HF API response format: {result}")
-                return None
-            
+                try:
+                    content = result["choices"][0]["message"]["content"]
+                    logger.info(f"✓ HF API response received: {len(content)} chars")
+                    return content.strip()
+                except (KeyError, IndexError, TypeError) as e:
+                    logger.error(f"Failed to parse HF chat response: {result}")
+                    return None
+                    
             elif response.status_code == 503:
                 logger.warning("HF model is loading, this may take a moment...")
                 return None
