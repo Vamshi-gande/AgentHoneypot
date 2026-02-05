@@ -681,4 +681,6 @@ if __name__ == '__main__':
     logger.info(f"✓ API Key: {API_KEY[:10]}...")
     logger.info(f"✓ Callback URL: {GUVI_CALLBACK_URL}")
     logger.info("=" * 80)
-    app.run(host='0.0.0.0', port=7860, debug=False)
+    port = int(os.environ.get("PORT", 7860))
+    app.run(host="0.0.0.0", port=port)
+
